@@ -31,10 +31,71 @@ def main():
     patient_ids, monitors, hour_columns, readings = load_readings("data/bp_readings.csv")
     print(f"Loaded {readings.shape[0]} patients x {readings.shape[1]} hours")
 
-    # TODO: answer each question in the README's summary table with NumPy.
+    patients = readings.shape[0]
+    total_readings = readings.size
 
-    # TODO: write one "key: value" line per answer to output/vitals_summary.txt.
+    mean_sbp = readings.mean()
+    sd_sbp = readings.std()
+    min_sbp = readings.min()
+    max_sbp = readings.max()
 
+    patient_means = readings.mean(axis=1)
+
+    stage2_patients = (patient_means >= 140).sum()
+
+    highest_patient_index = patient_means.argmax()
+    highest_patient = patient_ids[highest_patient_index]
+    highest_patient_mean = patient_means[highest_patient_index]
+
+    hour_means = readings.mean(axis=0)
+    peak_hour_index = hour_means.argmax()
+    peak_hour_column = hour_columns[peak_hour_index]
+    peak_hour_mean = hour_means[peak_hour_index]
+
+    monitor_names = sorted(set(monitors))
+
+    monitor_means = []
+    for monitor in monitor_names:
+        mask = monitors == monitor
+        monitor_means.append(patient_means[mask].mean())
+
+    monitor_means = np.array(monitor_means)
+
+    high_monitor_index = monitor_means.argmax()
+    high_monitor = monitor_names[high_monitor_index]
+
+    high_monitor_mask = monitors == high_monitor
+    other_monitor_mask = ~high_monitor_mask
+
+    high_monitor_mean = patient_means[high_monitor_mask].mean()
+    other_monitor_mean = patient_means[other_monitor_mask].mean()
+
+    monitor_offset = high_monitor_mean - other_monitor_mean
+
+    stage2_other_monitors = (
+        patient_means[other_monitor_mask] >= 140
+    ).sum()
+
+    output_lines = [
+        f"patients: {patients}",
+        f"readings: {total_readings}",
+        f"mean_sbp: {mean_sbp}",
+        f"sd_sbp: {sd_sbp}",
+        f"min_sbp: {min_sbp}",
+        f"max_sbp: {max_sbp}",
+        f"stage2_patients: {stage2_patients}",
+        f"highest_patient: {highest_patient}",
+        f"highest_patient_mean: {highest_patient_mean}",
+        f"peak_hour_column: {peak_hour_column}",
+        f"peak_hour_mean: {peak_hour_mean}",
+        f"high_monitor: {high_monitor}",
+        f"monitor_offset: {monitor_offset}",
+        f"stage2_other_monitors: {stage2_other_monitors}",
+    ]
+
+    with open("output/vitals_summary.txt", "w", encoding="utf-8") as file:
+        for line in output_lines:
+                file.write(line + "\n")
 
 if __name__ == "__main__":
     main()
